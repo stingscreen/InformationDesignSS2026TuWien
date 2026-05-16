@@ -46,7 +46,8 @@ h1 {
 .story-vis-frame {
   height: 100%;
   border-radius: 1.25rem;
-  background: white;
+  /*add back if we want a white border arround the cards*/
+  /*background: white;*/
   border: 1px solid #e0e0e0;
   overflow: hidden;
   padding: 1.5rem;
