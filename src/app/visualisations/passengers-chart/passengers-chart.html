@@ -1,1 +1,21 @@
-<p>passengers-chart works!</p>
+<div class="chart-outer">
+  <div class="chart-wrapper">
+    <div #chartContainer class="chart-host"></div>
+
+    <div class="chart-toolbar">
+      <button
+        type="button"
+        [class.active]="viewMode === 'separate'"
+        (click)="setViewMode('separate')">
+        Separate
+      </button>
+
+      <button
+        type="button"
+        [class.active]="viewMode === 'total'"
+        (click)="setViewMode('total')">
+        Total
+      </button>
+    </div>
+  </div>
+</div>
