@@ -1,3 +1,17 @@
 .example-spacer {
   flex: 1 1 auto;
 }
+
+.app-toolbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  box-shadow: #333333 0 0 15px 0;
+}
+
+.app-page {
+  padding-top: 64px;
+  min-height: 100vh;
+}

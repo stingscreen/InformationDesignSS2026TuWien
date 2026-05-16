@@ -5,5 +5,6 @@ import { Component } from '@angular/core';
   imports: [],
   templateUrl: './map-page-component.html',
   styleUrl: './map-page-component.css',
+  standalone: true,
 })
 export class MapPageComponent {}

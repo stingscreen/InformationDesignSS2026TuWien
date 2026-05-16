@@ -1,1 +1,42 @@
-<p>story-page-component works!</p>
+<section class="story-shell">
+  <aside class="story-text">
+    <div class="story-text-inner">
+      <p class="story-kicker">Vienna public transport accessibility</p>
+      <h1>How has public transport changed over time?</h1>
+
+      @for (step of steps; track step.id; let i = $index) {
+        <div class="story-step-block" #stepRef>
+          <app-story-step
+            [step]="step"
+            [active]="activeStep() === i">
+          </app-story-step>
+        </div>
+      }
+    </div>
+  </aside>
+
+  <main class="story-vis">
+    <div class="story-vis-frame">
+      @switch (activeStep()) {
+        @case (0) {
+          <app-hero-question></app-hero-question>
+        }
+        @case (1) {
+          <app-passengers-chart></app-passengers-chart>
+        }
+        @case (2) {
+          <app-network-chart></app-network-chart>
+        }
+        @case (3) {
+          <app-comparison-chart></app-comparison-chart>
+        }
+        @case (4) {
+          <app-map-teaser></app-map-teaser>
+        }
+        @default {
+          <app-hero-question></app-hero-question>
+        }
+      }
+    </div>
+  </main>
+</section>
