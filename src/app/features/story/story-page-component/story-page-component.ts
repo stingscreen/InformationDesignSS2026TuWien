@@ -1,6 +1,6 @@
 import { AfterViewInit, Component, ElementRef, QueryList, signal, ViewChildren } from '@angular/core';
 import { StoryStepComponent } from '../story-step/story-step.component';
-import { HeroQuestion } from '../../../visualisations/hero-question/hero-question';
+import { MainQuestion } from '../../../visualisations/main-question/main-question.component';
 import { PassengersChart } from '../../../visualisations/passengers-chart/passengers-chart';
 import { NetworkChart } from '../../../visualisations/network-chart/network-chart';
 import { ComparisonChart } from '../../../visualisations/comparison-chart/comparison-chart';
@@ -17,7 +17,7 @@ export interface StoryStep {
 
 @Component({
   selector: 'app-story-page-component',
-  imports: [StoryStepComponent, HeroQuestion, PassengersChart, NetworkChart, ComparisonChart, MapTeaser],
+  imports: [StoryStepComponent, MainQuestion, PassengersChart, NetworkChart, ComparisonChart, MapTeaser],
   templateUrl: './story-page-component.html',
   styleUrl: './story-page-component.css',
   standalone: true,

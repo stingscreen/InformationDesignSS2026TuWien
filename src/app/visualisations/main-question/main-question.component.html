@@ -1,0 +1,34 @@
+<section
+  class="landing-guide"
+  [style.background-image]="'linear-gradient(180deg, rgba(12,18,28,0.18) 0%, rgba(12,18,28,0.72) 100%), url(' + backgroundImage() + ')'">
+
+  <div class="main-content">
+    <h1>Is Vienna’s public transport really improving?</h1>
+
+    <p class="lead">
+      Follow passenger trends, network growth, and district differences,
+      then switch to the map to explore routes, stops, and accessibility in more detail.
+    </p>
+
+    <div class="action-row">
+      <button mat-raised-button color="primary" (click)="startStory()">
+        <mat-icon>south</mat-icon>
+        Start the story
+      </button>
+
+      <a mat-stroked-button class="secondary-action" routerLink="/map">
+        <mat-icon>map</mat-icon>
+        Explore map
+      </a>
+    </div>
+
+    <p class="scroll-hint">
+      Scroll to begin the guided story
+    </p>
+  </div>
+  <div class="image-credit">
+    <a href="https://de.wikipedia.org/wiki/Datei:Vienna,_administrative_divisions_-_Nmbrs.svg">
+      <span>Image: Wikimedia - Tubs</span>
+    </a>
+  </div>
+</section>

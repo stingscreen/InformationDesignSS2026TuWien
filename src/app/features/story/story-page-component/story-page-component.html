@@ -19,7 +19,7 @@
     <div class="story-vis-frame">
       @switch (activeStep()) {
         @case (0) {
-          <app-hero-question></app-hero-question>
+          <app-main-question></app-main-question>
         }
         @case (1) {
           <app-passengers-chart></app-passengers-chart>
@@ -34,7 +34,7 @@
           <app-map-teaser></app-map-teaser>
         }
         @default {
-          <app-hero-question></app-hero-question>
+          <app-main-question></app-main-question>
         }
       }
     </div>
