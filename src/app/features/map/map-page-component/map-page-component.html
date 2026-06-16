@@ -1,1 +1,114 @@
-<p>map-page-component works!</p>
+<div class="map-page">
+  <div #mapContainer class="map-host"></div>
+
+  <nav class="layer-tabs">
+    @for (tab of tabs; track tab.id) {
+      <button
+        type="button"
+        class="layer-tab"
+        [class.active]="activeLayer() === tab.id"
+        (click)="setLayer(tab.id)">
+        {{ tab.label }}
+      </button>
+    }
+  </nav>
+
+  <aside class="legend-panel" [class.open]="legendOpen()">
+    <button
+      type="button"
+      class="legend-tab"
+      (click)="toggleLegend()"
+      [attr.aria-expanded]="legendOpen()"
+      aria-label="Toggle legend">
+      Legend
+    </button>
+
+    <div class="legend-body">
+      @if (activeLayer() === 'districts') {
+        <h2 class="legend-heading">Districts</h2>
+        <ul class="legend-list">
+          @for (district of districts(); track district.nr) {
+            <li>
+              <button
+                type="button"
+                class="legend-item"
+                [class.active]="selectedDistrict()?.nr === district.nr"
+                (click)="selectDistrict(district.nr, district.name)">
+                <span class="legend-number">{{ district.nr }}</span>
+                {{ district.name }}
+              </button>
+            </li>
+          }
+        </ul>
+      } @else {
+        <h2 class="legend-heading">Lines</h2>
+        <ul class="legend-list">
+          @for (line of lines(); track line.id) {
+            <li>
+              <button
+                type="button"
+                class="legend-item"
+                [class.active]="selectedLine()?.lineId === line.id"
+                (click)="selectLineById(line.id)">
+                <span class="line-swatch" [style.background]="line.color"></span>
+                {{ line.name }}
+              </button>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  </aside>
+
+  <aside class="district-sidebar" [class.open]="selectedDistrict() !== null || selectedLine() !== null">
+    @if (selectedDistrict(); as district) {
+      <button type="button" class="sidebar-close" (click)="closeSidebar()" aria-label="Close panel">×</button>
+      <span class="sidebar-number">District {{ district.nr }}</span>
+      <h2 class="sidebar-name">{{ district.name }}</h2>
+
+      <dl class="facts">
+        @if (district.areaKm2 != null) {
+          <div><dt>Area</dt><dd>{{ district.areaKm2 | number:'1.1-1' }} km²</dd></div>
+        }
+        @if (district.population != null) {
+          <div>
+            <dt>Population</dt>
+            <dd>{{ district.population | number }} <span class="facts-note">({{ district.populationYear }})</span></dd>
+          </div>
+        }
+      </dl>
+
+      @if (district.lines; as lines) {
+        <h3 class="facts-heading">Lines through this district</h3>
+        @for (group of lineGroups; track group.key) {
+          @if (lines[group.key].length) {
+            <div class="line-group">
+              <span class="line-group-label">{{ group.label }}</span>
+              <div class="chips">
+                @for (id of lines[group.key]; track id) {
+                  <span class="chip">{{ id }}</span>
+                }
+              </div>
+            </div>
+          }
+        }
+      }
+    } @else if (selectedLine(); as line) {
+      <button type="button" class="sidebar-close" (click)="closeSidebar()" aria-label="Close panel">×</button>
+      <span class="sidebar-number" [style.color]="line.color ?? '#6a3dc7'">Line {{ line.name }}</span>
+      <h2 class="sidebar-name">{{ line.longName }}</h2>
+      <p class="sidebar-substat">
+        {{ line.stops.length }} stops
+        @if (line.lengthKm != null) { · {{ line.lengthKm | number:'1.1-1' }} km }
+      </p>
+      <ol class="stop-list" [style.--line-color]="line.color ?? '#6a3dc7'">
+        @for (stop of line.stops; track $index) {
+          <li class="stop-item">
+            <span class="stop-marker"></span>
+            <span class="stop-name">{{ stop.name }}</span>
+          </li>
+        }
+      </ol>
+    }
+  </aside>
+</div>
