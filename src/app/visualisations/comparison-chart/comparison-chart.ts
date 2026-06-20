@@ -18,6 +18,7 @@ interface CsvRow {
   POPULATION_PERCENT?: number;
   ANNUAL_TICKETS_PERCENT?: number;
   AVERAGE_PERCENT?: number;
+  ANNUAL_TICKETS_INTERPOLATED?: boolean;
 }
 
 const COLORS = {
@@ -37,6 +38,7 @@ const COLORS = {
 })
 export class ComparisonChart implements AfterViewInit {
   @ViewChild('chartContainer', { static: true }) chartContainer!: ElementRef<HTMLDivElement>;
+  @ViewChild('tooltip') tooltipEl!: ElementRef<HTMLDivElement>;
 
   viewMode: ViewMode = 'separate';
 
@@ -176,7 +178,6 @@ export class ComparisonChart implements AfterViewInit {
     const missingDataPoints = this.rawData.filter((d) => d.ANNUAL_TICKETS === 0);
 
     missingDataPoints.forEach((d) => {
-
       if (d.ANNUAL_TICKETS > 0) return;
 
       const prev = realDataPoints.filter((p) => p.YEAR < d.YEAR).pop();
@@ -200,6 +201,7 @@ export class ComparisonChart implements AfterViewInit {
 
       if (isInterpolated) {
         d.ANNUAL_TICKETS = Math.round(interpolatedValue);
+        d.ANNUAL_TICKETS_INTERPOLATED = true;
       }
     });
   }
@@ -243,8 +245,8 @@ export class ComparisonChart implements AfterViewInit {
     this.addAxes(chart, x, y);
     this.addGrid(chart, y, this.dimensions.width);
     this.drawLegendAndLines(svg, chart, x, y);
-    this.drawAnnotations(chart, x);
   }
+
   private createSvgElement(
     element: HTMLElement,
   ): d3.Selection<SVGSVGElement, unknown, null, undefined> {
@@ -263,10 +265,7 @@ export class ComparisonChart implements AfterViewInit {
   private createScales() {
     const { width, height } = this.dimensions;
 
-    const x = d3
-      .scaleLinear()
-      .domain([2001, 2023])
-      .range([0, width]);
+    const x = d3.scaleLinear().domain([2001, 2023]).range([0, width]);
 
     let yMax: number;
     if (this.viewMode === 'average') {
@@ -329,6 +328,8 @@ export class ComparisonChart implements AfterViewInit {
     const { width, margin } = this.dimensions;
     const legend = this.createLegend(svg, width, margin);
 
+    this.drawAnnotations(chart, x);
+
     if (this.viewMode === 'average') {
       this.drawAverageView(chart, x, y, legend);
     } else {
@@ -381,6 +382,7 @@ export class ComparisonChart implements AfterViewInit {
       const dataWithPercent = this.rawData.map((d) => ({
         YEAR: d.YEAR,
         [key]: d[(key + '_PERCENT') as keyof CsvRow] ?? 0,
+        interpolated: key === 'ANNUAL_TICKETS' ? !!d.ANNUAL_TICKETS_INTERPOLATED : false,
       }));
 
       this.drawLine(chart, dataWithPercent, x, y, COLORS[key], key);
@@ -443,8 +445,8 @@ export class ComparisonChart implements AfterViewInit {
     y: ScaleLinear<number, number>,
     color: string,
   ): void {
-    chart
-      .selectAll('.dot-total')
+    const dots = chart
+      .selectAll('.dot-average')
       .data(data)
       .enter()
       .append('circle')
@@ -452,6 +454,17 @@ export class ComparisonChart implements AfterViewInit {
       .attr('cy', (d: any) => y(d.AVERAGE))
       .attr('r', 4)
       .attr('fill', color);
+
+    dots
+      .on('mouseover', (event: MouseEvent, d: any) => {
+        this.showTooltip(event, d.YEAR, d.AVERAGE, 'AVERAGE', false);
+      })
+      .on('mousemove', (event: MouseEvent) => {
+        this.moveTooltip(event);
+      })
+      .on('mouseout', () => {
+        this.hideTooltip();
+      });
   }
 
   private drawDotsForKey(
@@ -462,7 +475,7 @@ export class ComparisonChart implements AfterViewInit {
     color: string,
     key: DataKey,
   ): void {
-    chart
+    const dots = chart
       .selectAll(`.dot-${key}`)
       .data(data)
       .enter()
@@ -471,6 +484,17 @@ export class ComparisonChart implements AfterViewInit {
       .attr('cy', (d: any) => y(d[key]))
       .attr('r', 4)
       .attr('fill', color);
+
+    dots
+      .on('mouseover', (event: MouseEvent, d: any) => {
+        this.showTooltip(event, d.YEAR, d[key], key, d.interpolated);
+      })
+      .on('mousemove', (event: MouseEvent) => {
+        this.moveTooltip(event);
+      })
+      .on('mouseout', () => {
+        this.hideTooltip();
+      });
   }
 
   private addLegendItem(legend: any, color: string, label: string, index: number = 0): void {
@@ -532,5 +556,33 @@ export class ComparisonChart implements AfterViewInit {
       .attr('fill', '#666')
       .attr('font-size', 12)
       .text(label);
+  }
+
+  private showTooltip(
+    event: MouseEvent,
+    year: number,
+    value: number,
+    label: string,
+    interpolated: boolean = false,
+  ): void {
+    const elem = this.tooltipEl.nativeElement;
+    elem.style.display = 'block';
+    let html = `<strong>${label}</strong><br>${year}: ${value.toFixed(1)}%`;
+    if (interpolated) {
+      html += `<br><span style="color:red;">(interpolated)</span>`;
+    }
+    elem.innerHTML = html;
+    this.moveTooltip(event);
+  }
+
+  private moveTooltip(event: MouseEvent): void {
+    const elem = this.tooltipEl.nativeElement;
+    const containerRect = this.chartContainer.nativeElement.getBoundingClientRect();
+    elem.style.left = event.clientX - containerRect.left + 15 + 'px';
+    elem.style.top = event.clientY - containerRect.top - 15 + 'px';
+  }
+
+  private hideTooltip(): void {
+    this.tooltipEl.nativeElement.style.display = 'none';
   }
 }

@@ -30,6 +30,7 @@ const COLORS = {
 })
 export class NetworkChart implements AfterViewInit {
   @ViewChild('chartContainer', { static: true }) chartContainer!: ElementRef<HTMLDivElement>;
+  @ViewChild('tooltip') tooltipEl!: ElementRef<HTMLDivElement>;
 
   viewMode: ViewMode = 'separate';
 
@@ -91,7 +92,6 @@ export class NetworkChart implements AfterViewInit {
     this.addAxes(chart, x, y);
     this.addGrid(chart, y, this.dimensions.width);
     this.drawContent(svg, chart, x, y);
-    this.drawAnnotations(chart, x);
   }
 
   private createSvgElement(
@@ -147,9 +147,12 @@ export class NetworkChart implements AfterViewInit {
   }
 
   private addGrid(chart: any, y: ScaleLinear<number, number>, width: number): void {
-    chart.append('g')
+    chart
+      .append('g')
       .attr('class', 'grid')
-      .call(d3.axisLeft(y)
+      .call(
+        d3
+          .axisLeft(y)
           .ticks(6)
           .tickSize(-width)
           .tickFormat(() => ''),
@@ -164,6 +167,8 @@ export class NetworkChart implements AfterViewInit {
   ): void {
     const { width, margin } = this.dimensions;
     const legend = this.createLegend(svg, width, margin);
+
+    this.drawAnnotations(chart, x);
 
     if (this.viewMode === 'total') {
       this.drawTotalView(chart, x, y, legend);
@@ -232,6 +237,23 @@ export class NetworkChart implements AfterViewInit {
       .attr('stroke', color)
       .attr('stroke-width', key === 'TOTAL' ? 3 : 2.5)
       .attr('d', lineGenerator);
+
+    chart
+      .append('path')
+      .datum(data)
+      .attr('fill', 'none')
+      .attr('stroke', 'transparent')
+      .attr('stroke-width', 20)
+      .attr('d', lineGenerator)
+      .on('mouseover', (event: MouseEvent) => {
+        this.showTooltip(event, key);
+      })
+      .on('mousemove', (event: MouseEvent) => {
+        this.moveTooltip(event);
+      })
+      .on('mouseout', () => {
+        this.hideTooltip();
+      });
   }
 
   private drawArea(
@@ -319,5 +341,23 @@ export class NetworkChart implements AfterViewInit {
       .attr('fill', '#666')
       .attr('font-size', 12)
       .text(label);
+  }
+
+  private showTooltip(event: MouseEvent, label: string): void {
+    const elem = this.tooltipEl.nativeElement;
+    elem.style.display = 'block';
+    elem.innerHTML = `<strong>${label}</strong>`;
+    this.moveTooltip(event);
+  }
+
+  private moveTooltip(event: MouseEvent): void {
+    const elem = this.tooltipEl.nativeElement;
+    const containerRect = this.chartContainer.nativeElement.getBoundingClientRect();
+    elem.style.left = event.clientX - containerRect.left + 15 + 'px';
+    elem.style.top = event.clientY - containerRect.top - 15 + 'px';
+  }
+
+  private hideTooltip(): void {
+    this.tooltipEl.nativeElement.style.display = 'none';
   }
 }

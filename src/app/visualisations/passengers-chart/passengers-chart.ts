@@ -36,6 +36,7 @@ const COLORS = {
 })
 export class PassengersChart implements AfterViewInit {
   @ViewChild('chartContainer', { static: true }) chartContainer!: ElementRef<HTMLDivElement>;
+  @ViewChild('tooltip') tooltipEl!: ElementRef<HTMLDivElement>;
 
   viewMode: ViewMode = 'separate';
 
@@ -45,7 +46,7 @@ export class PassengersChart implements AfterViewInit {
   private readonly dimensions = {
     width: 500,
     height: 250,
-    margin: { top: 20, right: 140, bottom: 40, left: 60 }
+    margin: { top: 20, right: 140, bottom: 40, left: 60 },
   };
 
   ngAfterViewInit(): void {
@@ -59,7 +60,7 @@ export class PassengersChart implements AfterViewInit {
   }
 
   private loadAndRender(): void {
-    this.http.get("data/fahrgaeste2023.csv", { responseType: 'text' }).subscribe({
+    this.http.get('data/fahrgaeste2023.csv', { responseType: 'text' }).subscribe({
       next: (csvText: string) => {
         const parser = d3.dsvFormat(';');
         this.rawData = parser.parse(csvText, this.parseCsvRow.bind(this));
@@ -88,21 +89,25 @@ export class PassengersChart implements AfterViewInit {
     element.innerHTML = '';
 
     const svg = this.createSvgElement(element);
-    const chart = svg.append('g').attr('transform', `translate(${this.dimensions.margin.left},${this.dimensions.margin.top})`);
+    const chart = svg
+      .append('g')
+      .attr('transform', `translate(${this.dimensions.margin.left},${this.dimensions.margin.top})`);
 
     const { x, y } = this.createScales();
     this.addAxes(chart, x, y);
     this.addGrid(chart, y, this.dimensions.width);
     this.drawLegendAndLines(svg, chart, x, y);
-    this.drawAnnotations(chart, x);
   }
 
-  private createSvgElement(element: HTMLElement): d3.Selection<SVGSVGElement, unknown, null, undefined> {
+  private createSvgElement(
+    element: HTMLElement,
+  ): d3.Selection<SVGSVGElement, unknown, null, undefined> {
     const { width, height, margin } = this.dimensions;
     const totalWidth = width + margin.left + margin.right;
     const totalHeight = height + margin.top + margin.bottom;
 
-    return d3.select(element)
+    return d3
+      .select(element)
       .append('svg')
       .attr('viewBox', `0 0 ${totalWidth} ${totalHeight}`)
       .style('width', '100%')
@@ -112,15 +117,18 @@ export class PassengersChart implements AfterViewInit {
   private createScales() {
     const { width, height } = this.dimensions;
 
-    const x = d3.scaleLinear()
+    const x = d3
+      .scaleLinear()
       .domain(d3.extent(this.rawData, (d) => d.YEAR) as [number, number])
       .range([0, width]);
 
-    const yMax = this.viewMode === 'total'
-      ? d3.max(this.rawData, (d) => d.TOTAL) ?? 0
-      : d3.max(this.rawData, (d) => Math.max(d.BUS, d.TRAM, d.UNDERGROUND)) ?? 0;
+    const yMax =
+      this.viewMode === 'total'
+        ? (d3.max(this.rawData, (d) => d.TOTAL) ?? 0)
+        : (d3.max(this.rawData, (d) => Math.max(d.BUS, d.TRAM, d.UNDERGROUND)) ?? 0);
 
-    const y = d3.scaleLinear()
+    const y = d3
+      .scaleLinear()
       .domain([0, yMax * 1.05])
       .nice()
       .range([height, 0]);
@@ -128,29 +136,44 @@ export class PassengersChart implements AfterViewInit {
     return { x, y };
   }
 
-  private addAxes(chart: any, x: ScaleLinear<number, number>, y: ScaleLinear<number, number>): void {
+  private addAxes(
+    chart: any,
+    x: ScaleLinear<number, number>,
+    y: ScaleLinear<number, number>,
+  ): void {
     const { height } = this.dimensions;
 
-    chart.append('g')
+    chart
+      .append('g')
       .attr('transform', `translate(0,${height})`)
       .call(d3.axisBottom(x).tickFormat(d3.format('d')));
 
-    chart.append('g')
-      .call(d3.axisLeft(y).ticks(6).tickFormat(d3.format('.2s')));
+    chart.append('g').call(d3.axisLeft(y).ticks(6).tickFormat(d3.format('.2s')));
   }
 
   private addGrid(chart: any, y: ScaleLinear<number, number>, width: number): void {
-    chart.append('g')
+    chart
+      .append('g')
       .attr('class', 'grid')
-      .call(d3.axisLeft(y)
-        .ticks(6)
-        .tickSize(-width)
-        .tickFormat(() => ''));
+      .call(
+        d3
+          .axisLeft(y)
+          .ticks(6)
+          .tickSize(-width)
+          .tickFormat(() => ''),
+      );
   }
 
-  private drawLegendAndLines(svg: any, chart: any, x: ScaleLinear<number, number>, y: ScaleLinear<number, number>): void {
+  private drawLegendAndLines(
+    svg: any,
+    chart: any,
+    x: ScaleLinear<number, number>,
+    y: ScaleLinear<number, number>,
+  ): void {
     const { width, margin } = this.dimensions;
     const legend = this.createLegend(svg, width, margin);
+
+    this.drawAnnotations(chart, x);
 
     if (this.viewMode === 'total') {
       this.drawTotalView(chart, x, y, legend);
@@ -160,20 +183,31 @@ export class PassengersChart implements AfterViewInit {
   }
 
   private createLegend(svg: any, width: number, margin: any): any {
-    return svg.append('g')
+    return svg
+      .append('g')
       .attr('class', 'legend')
       .attr('transform', `translate(${width + margin.left + 20}, ${margin.top + 20})`);
   }
 
-  private drawTotalView(chart: any, x: ScaleLinear<number, number>, y: ScaleLinear<number, number>, legend: any): void {
-    const totalData = this.rawData.map(d => ({ YEAR: d.YEAR, TOTAL: d.TOTAL }));
+  private drawTotalView(
+    chart: any,
+    x: ScaleLinear<number, number>,
+    y: ScaleLinear<number, number>,
+    legend: any,
+  ): void {
+    const totalData = this.rawData.map((d) => ({ YEAR: d.YEAR, TOTAL: d.TOTAL }));
 
     this.drawLine(chart, totalData, x, y, COLORS.TOTAL, 'TOTAL');
     this.drawDotsForTotal(chart, totalData, x, y, COLORS.TOTAL);
     this.addLegendItem(legend, COLORS.TOTAL, 'TOTAL');
   }
 
-  private drawSeparateView(chart: any, x: ScaleLinear<number, number>, y: ScaleLinear<number, number>, legend: any): void {
+  private drawSeparateView(
+    chart: any,
+    x: ScaleLinear<number, number>,
+    y: ScaleLinear<number, number>,
+    legend: any,
+  ): void {
     const transportKeys: TransportKey[] = ['BUS', 'TRAM', 'UNDERGROUND'];
 
     transportKeys.forEach((key, index) => {
@@ -183,13 +217,22 @@ export class PassengersChart implements AfterViewInit {
     });
   }
 
-  private drawLine(chart: any, data: any[], x: ScaleLinear<number, number>, y: ScaleLinear<number, number>, color: string, key: string): void {
-    const lineGenerator = d3.line<any>()
+  private drawLine(
+    chart: any,
+    data: any[],
+    x: ScaleLinear<number, number>,
+    y: ScaleLinear<number, number>,
+    color: string,
+    key: string,
+  ): void {
+    const lineGenerator = d3
+      .line<any>()
       .x((d) => x(d.YEAR))
       .y((d) => y(d[key]))
       .curve(d3.curveMonotoneX);
 
-    chart.append('path')
+    chart
+      .append('path')
       .datum(data)
       .attr('fill', 'none')
       .attr('stroke', color)
@@ -197,8 +240,15 @@ export class PassengersChart implements AfterViewInit {
       .attr('d', lineGenerator);
   }
 
-  private drawDotsForTotal(chart: any, data: any[], x: ScaleLinear<number, number>, y: ScaleLinear<number, number>, color: string): void {
-    chart.selectAll('.dot-total')
+  private drawDotsForTotal(
+    chart: any,
+    data: any[],
+    x: ScaleLinear<number, number>,
+    y: ScaleLinear<number, number>,
+    color: string,
+  ): void {
+    const dots = chart
+      .selectAll('.dot-total')
       .data(data)
       .enter()
       .append('circle')
@@ -206,10 +256,29 @@ export class PassengersChart implements AfterViewInit {
       .attr('cy', (d: any) => y(d.TOTAL))
       .attr('r', 4)
       .attr('fill', color);
+
+    dots
+      .on('mouseover', (event: MouseEvent, d: any) => {
+        this.showTooltip(event, d.YEAR, d.TOTAL, 'TOTAL');
+      })
+      .on('mousemove', (event: MouseEvent) => {
+        this.moveTooltip(event);
+      })
+      .on('mouseout', () => {
+        this.hideTooltip();
+      });
   }
 
-  private drawDotsForKey(chart: any, data: CsvRow[], x: ScaleLinear<number, number>, y: ScaleLinear<number, number>, color: string, key: TransportKey): void {
-    chart.selectAll(`.dot-${key}`)
+  private drawDotsForKey(
+    chart: any,
+    data: CsvRow[],
+    x: ScaleLinear<number, number>,
+    y: ScaleLinear<number, number>,
+    color: string,
+    key: TransportKey,
+  ): void {
+    const dots = chart
+      .selectAll(`.dot-${key}`)
       .data(data)
       .enter()
       .append('circle')
@@ -217,12 +286,24 @@ export class PassengersChart implements AfterViewInit {
       .attr('cy', (d: CsvRow) => y(d[key]))
       .attr('r', 4)
       .attr('fill', color);
+
+    dots
+      .on('mouseover', (event: MouseEvent, d: CsvRow) => {
+        this.showTooltip(event, d.YEAR, d[key], key);
+      })
+      .on('mousemove', (event: MouseEvent) => {
+        this.moveTooltip(event);
+      })
+      .on('mouseout', () => {
+        this.hideTooltip();
+      });
   }
 
   private addLegendItem(legend: any, color: string, label: string, index: number = 0): void {
     const row = legend.append('g').attr('transform', `translate(0, ${index * 24})`);
 
-    row.append('line')
+    row
+      .append('line')
       .attr('x1', 0)
       .attr('x2', 22)
       .attr('y1', 0)
@@ -230,7 +311,8 @@ export class PassengersChart implements AfterViewInit {
       .attr('stroke', color)
       .attr('stroke-width', 3);
 
-    row.append('text')
+    row
+      .append('text')
       .attr('x', 30)
       .attr('y', 4)
       .attr('fill', '#444')
@@ -257,7 +339,8 @@ export class PassengersChart implements AfterViewInit {
   }
 
   private addAnnotationLine(markerGroup: any, xPos: number, height: number): void {
-    markerGroup.append('line')
+    markerGroup
+      .append('line')
       .attr('x1', xPos)
       .attr('x2', xPos)
       .attr('y1', 0)
@@ -268,11 +351,30 @@ export class PassengersChart implements AfterViewInit {
   }
 
   private addAnnotationLabel(markerGroup: any, xPos: number, label: string): void {
-    markerGroup.append('text')
+    markerGroup
+      .append('text')
       .attr('x', xPos + 6)
       .attr('y', 14)
       .attr('fill', '#666')
       .attr('font-size', 12)
       .text(label);
+  }
+
+  private showTooltip(event: MouseEvent, year: number, value: number, label: string): void {
+    const elem = this.tooltipEl.nativeElement;
+    elem.style.display = 'block';
+    elem.innerHTML = `<strong>${label}</strong><br>${year}: ${value.toLocaleString()}`;
+    this.moveTooltip(event);
+  }
+
+  private moveTooltip(event: MouseEvent): void {
+    const elem = this.tooltipEl.nativeElement;
+    const containerRect = this.chartContainer.nativeElement.getBoundingClientRect();
+    elem.style.left = event.clientX - containerRect.left + 15 + 'px';
+    elem.style.top = event.clientY - containerRect.top - 15 + 'px';
+  }
+
+  private hideTooltip(): void {
+    this.tooltipEl.nativeElement.style.display = 'none';
   }
 }

@@ -1,5 +1,7 @@
 <div class="chart-outer">
   <div class="chart-wrapper">
+    <div #tooltip class="chart-tooltip"></div>
+
     <div #chartContainer class="chart-host"></div>
 
     <div class="chart-toolbar">
@@ -14,7 +16,7 @@
         type="button"
         [class.active]="viewMode === 'average'"
         (click)="setViewMode('average')">
-        Average
+        Total
       </button>
     </div>
   </div>

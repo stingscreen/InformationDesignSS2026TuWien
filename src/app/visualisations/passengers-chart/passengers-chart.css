@@ -10,6 +10,11 @@
 
 .chart-wrapper {
   width: 90%;
+  position: relative;
+}
+
+.chart-host {
+  position: relative;
 }
 
 .chart-toolbar {
@@ -32,4 +37,15 @@
   background: #333;
   color: #fff;
   border-color: #333;
+}
+
+.chart-tooltip {
+  position: absolute;
+  background: white;
+  border: 1px solid #ccc;
+  padding: 6px 10px;
+  border-radius: 4px;
+  pointer-events: none;
+  display: none;
+  z-index: 10;
 }
