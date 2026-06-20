@@ -1,0 +1,74 @@
+.chart-outer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  align-self: center;
+  width: 100%;
+  height: 100%;
+  padding: 1rem 0;
+}
+
+.chart-wrapper {
+  width: 90%;
+}
+
+.chart-toolbar {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.chart-toolbar button {
+  border: 1px solid #cfcfcf;
+  background: #fff;
+  color: #333;
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.chart-toolbar button:hover {
+  background: #f0f0f0;
+}
+
+.chart-toolbar button.active {
+  background: #333;
+  color: #fff;
+  border-color: #333;
+}
+
+/* D3 Chart styles */
+:host ::ng-deep .grid line {
+  stroke: #e0e0e0;
+  stroke-opacity: 0.7;
+  shape-rendering: crispEdges;
+}
+
+:host ::ng-deep .grid .domain,
+:host ::ng-deep .grid .tick line {
+  stroke: #e0e0e0;
+}
+
+:host ::ng-deep .domain {
+  stroke: #999;
+}
+
+:host ::ng-deep .tick line {
+  stroke: #ccc;
+}
+
+:host ::ng-deep .tick text {
+  fill: #555;
+  font-size: 11px;
+}
+
+:host ::ng-deep .legend text {
+  font-size: 12px;
+}
+
+:host ::ng-deep .markers text {
+  font-size: 11px;
+  fill: #666;
+}

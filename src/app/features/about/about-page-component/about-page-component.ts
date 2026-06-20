@@ -7,4 +7,7 @@ import { Component } from '@angular/core';
   styleUrl: './about-page-component.css',
   standalone: true,
 })
-export class AboutPageComponent {}
+export class AboutPageComponent {
+  title = 'Vienna Public Transport Evolution';
+  description = 'Group 01: Müller Leo, Kornacki Cedric, Saad Fabian';
+}
