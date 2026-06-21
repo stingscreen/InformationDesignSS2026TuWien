@@ -31,7 +31,6 @@ interface CsvRow {
   AVERAGE_PERCENT?: number;
   TICKETS_INTERPOLATED?: boolean;
 }
-
 const COLORS = {
   PASSENGERS: '#1f77b4',
   NETWORK: '#ff7f0e',
