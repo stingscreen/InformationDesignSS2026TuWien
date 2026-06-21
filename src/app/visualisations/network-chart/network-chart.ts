@@ -1,7 +1,18 @@
+import {
+  createSvgElement,
+  addAxes,
+  addGrid,
+  createLegend,
+  addLegendItem,
+  drawAnnotations,
+  moveTooltip,
+  hideTooltip,
+  drawLine,
+  createScales,
+} from '../../core/services/chart-utils';
 import { AfterViewInit, Component, ElementRef, inject, ViewChild } from '@angular/core';
 import * as d3 from 'd3';
 import { HttpClient } from '@angular/common/http';
-import { ScaleLinear } from 'd3';
 
 type TransportKey = 'BUS' | 'TRAM' | 'UNDERGROUND';
 type ViewMode = 'separate' | 'total';
@@ -83,80 +94,15 @@ export class NetworkChart implements AfterViewInit {
     const element = this.chartContainer.nativeElement;
     element.innerHTML = '';
 
-    const svg = this.createSvgElement(element);
+    const svg = createSvgElement(element, this.dimensions);
     const chart = svg
       .append('g')
       .attr('transform', `translate(${this.dimensions.margin.left},${this.dimensions.margin.top})`);
 
-    const { x, y } = this.createScales();
-    this.addAxes(chart, x, y);
-    this.addGrid(chart, y, this.dimensions.width);
+    const { x, y } = createScales(this.rawData, this.viewMode, this.dimensions);
+    addAxes(chart, x, y, this.dimensions.height);
+    addGrid(chart, y, this.dimensions.width);
     this.drawContent(svg, chart, x, y);
-  }
-
-  private createSvgElement(
-    element: HTMLElement,
-  ): d3.Selection<SVGSVGElement, unknown, null, undefined> {
-    const { width, height, margin } = this.dimensions;
-    const totalWidth = width + margin.left + margin.right;
-    const totalHeight = height + margin.top + margin.bottom;
-
-    return d3
-      .select(element)
-      .append('svg')
-      .attr('viewBox', `0 0 ${totalWidth} ${totalHeight}`)
-      .style('width', '100%')
-      .style('height', 'auto');
-  }
-
-  private createScales() {
-    const { width, height } = this.dimensions;
-
-    const x = d3
-      .scaleLinear()
-      .domain(d3.extent(this.rawData, (d) => d.YEAR) as [number, number])
-      .range([0, width]);
-
-    const yMax =
-      this.viewMode === 'total'
-        ? (d3.max(this.rawData, (d) => d.TOTAL) ?? 0)
-        : (d3.max(this.rawData, (d) => Math.max(d.BUS, d.TRAM, d.UNDERGROUND)) ?? 0);
-
-    const y = d3
-      .scaleLinear()
-      .domain([0, yMax * 1.05])
-      .nice()
-      .range([height, 0]);
-
-    return { x, y };
-  }
-
-  private addAxes(
-    chart: d3.Selection<SVGGElement, unknown, null, undefined>,
-    x: d3.ScaleLinear<number, number>,
-    y: d3.ScaleLinear<number, number>,
-  ): void {
-    const { height } = this.dimensions;
-
-    chart
-      .append('g')
-      .attr('transform', `translate(0,${height})`)
-      .call(d3.axisBottom(x).tickFormat(d3.format('d')));
-
-    chart.append('g').call(d3.axisLeft(y).ticks(6).tickFormat(d3.format('.2s')));
-  }
-
-  private addGrid(chart: any, y: ScaleLinear<number, number>, width: number): void {
-    chart
-      .append('g')
-      .attr('class', 'grid')
-      .call(
-        d3
-          .axisLeft(y)
-          .ticks(6)
-          .tickSize(-width)
-          .tickFormat(() => ''),
-      );
   }
 
   private drawContent(
@@ -166,26 +112,18 @@ export class NetworkChart implements AfterViewInit {
     y: d3.ScaleLinear<number, number>,
   ): void {
     const { width, margin } = this.dimensions;
-    const legend = this.createLegend(svg, width, margin);
+    const legend = createLegend(svg, width, margin);
 
-    this.drawAnnotations(chart, x);
+    drawAnnotations(chart, x, this.dimensions, [
+      { year: 2008,
+      label: 'U2 extension to Stadion', }
+    ]);
 
     if (this.viewMode === 'total') {
       this.drawTotalView(chart, x, y, legend);
     } else {
       this.drawSeparateView(chart, x, y, legend);
     }
-  }
-
-  private createLegend(
-    svg: d3.Selection<SVGSVGElement, unknown, null, undefined>,
-    width: number,
-    margin: any,
-  ): d3.Selection<SVGGElement, unknown, null, undefined> {
-    return svg
-      .append('g')
-      .attr('class', 'legend')
-      .attr('transform', `translate(${width + margin.left + 20}, ${margin.top + 20})`);
   }
 
   private drawTotalView(
@@ -198,7 +136,7 @@ export class NetworkChart implements AfterViewInit {
 
     this.drawLine(chart, totalData, x, y, COLORS.TOTAL, 'TOTAL');
     this.drawArea(chart, totalData, x, y, COLORS.TOTAL);
-    this.addLegendItem(legend, COLORS.TOTAL, 'TOTAL');
+    addLegendItem(legend, COLORS.TOTAL, 'TOTAL');
   }
 
   private drawSeparateView(
@@ -212,7 +150,7 @@ export class NetworkChart implements AfterViewInit {
     transportKeys.forEach((key, index) => {
       this.drawLine(chart, this.rawData, x, y, COLORS[key], key);
       this.drawArea(chart, this.rawData, x, y, COLORS[key], key);
-      this.addLegendItem(legend, COLORS[key], key, index);
+      addLegendItem(legend, COLORS[key], key, index);
     });
   }
 
@@ -224,19 +162,14 @@ export class NetworkChart implements AfterViewInit {
     color: string,
     key: string,
   ): void {
+
+    drawLine(chart, data, x, y, color, key);
+
     const lineGenerator = d3
       .line<any>()
       .x((d) => x(d.YEAR))
       .y((d) => y(d[key]))
       .curve(d3.curveMonotoneX);
-
-    chart
-      .append('path')
-      .datum(data)
-      .attr('fill', 'none')
-      .attr('stroke', color)
-      .attr('stroke-width', key === 'TOTAL' ? 3 : 2.5)
-      .attr('d', lineGenerator);
 
     chart
       .append('path')
@@ -249,10 +182,10 @@ export class NetworkChart implements AfterViewInit {
         this.showTooltip(event, key);
       })
       .on('mousemove', (event: MouseEvent) => {
-        this.moveTooltip(event);
+        moveTooltip(event, this.tooltipEl, this.chartContainer);
       })
       .on('mouseout', () => {
-        this.hideTooltip();
+        hideTooltip(this.tooltipEl);
       });
   }
 
@@ -279,85 +212,10 @@ export class NetworkChart implements AfterViewInit {
       .attr('d', areaGenerator);
   }
 
-  private addLegendItem(
-    legend: d3.Selection<SVGGElement, unknown, null, undefined>,
-    color: string,
-    label: string,
-    index: number = 0,
-  ): void {
-    const row = legend.append('g').attr('transform', `translate(0, ${index * 24})`);
-
-    row
-      .append('line')
-      .attr('x1', 0)
-      .attr('x2', 22)
-      .attr('y1', 0)
-      .attr('y2', 0)
-      .attr('stroke', color)
-      .attr('stroke-width', 3);
-
-    row
-      .append('text')
-      .attr('x', 30)
-      .attr('y', 4)
-      .attr('fill', '#444')
-      .attr('font-size', 12)
-      .text(label);
-  }
-
-  private drawAnnotations(
-    chart: d3.Selection<SVGGElement, unknown, null, undefined>,
-    x: d3.ScaleLinear<number, number>,
-  ): void {
-    const { width, height } = this.dimensions;
-    const markerGroup = chart.append('g').attr('class', 'markers');
-
-    const annotation = { year: 2008, label: 'U2 extension to Stadion' };
-    const xPos = x(annotation.year);
-
-    if (xPos >= 0 && xPos <= width) {
-      this.addAnnotationLine(markerGroup, xPos, height);
-      this.addAnnotationLabel(markerGroup, xPos, annotation.label);
-    }
-  }
-
-  private addAnnotationLine(markerGroup: any, xPos: number, height: number): void {
-    markerGroup
-      .append('line')
-      .attr('x1', xPos)
-      .attr('x2', xPos)
-      .attr('y1', 0)
-      .attr('y2', height)
-      .attr('stroke', '#666')
-      .attr('stroke-width', 1.5)
-      .attr('stroke-dasharray', '4 4');
-  }
-
-  private addAnnotationLabel(markerGroup: any, xPos: number, label: string): void {
-    markerGroup
-      .append('text')
-      .attr('x', xPos + 6)
-      .attr('y', 14)
-      .attr('fill', '#666')
-      .attr('font-size', 12)
-      .text(label);
-  }
-
   private showTooltip(event: MouseEvent, label: string): void {
     const elem = this.tooltipEl.nativeElement;
     elem.style.display = 'block';
     elem.innerHTML = `<strong>${label}</strong>`;
-    this.moveTooltip(event);
-  }
-
-  private moveTooltip(event: MouseEvent): void {
-    const elem = this.tooltipEl.nativeElement;
-    const containerRect = this.chartContainer.nativeElement.getBoundingClientRect();
-    elem.style.left = event.clientX - containerRect.left + 15 + 'px';
-    elem.style.top = event.clientY - containerRect.top - 15 + 'px';
-  }
-
-  private hideTooltip(): void {
-    this.tooltipEl.nativeElement.style.display = 'none';
+    moveTooltip(event, this.tooltipEl, this.chartContainer);
   }
 }

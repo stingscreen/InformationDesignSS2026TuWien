@@ -1,10 +1,21 @@
+import {
+  createSvgElement,
+  addAxes,
+  addGrid,
+  createLegend,
+  addLegendItem,
+  drawAnnotations,
+  moveTooltip,
+  hideTooltip,
+  drawLine,
+} from '../../core/services/chart-utils';
 import { AfterViewInit, Component, ElementRef, inject, ViewChild } from '@angular/core';
 import * as d3 from 'd3';
 import { HttpClient } from '@angular/common/http';
 import { forkJoin } from 'rxjs';
 import { ScaleLinear } from 'd3';
 
-type DataKey = 'PASSENGERS' | 'NETWORK' | 'POPULATION' | 'ANNUAL_TICKETS';
+type DataKey = 'PASSENGERS' | 'NETWORK' | 'POPULATION' | 'TICKETS';
 type ViewMode = 'separate' | 'average';
 
 interface CsvRow {
@@ -12,20 +23,20 @@ interface CsvRow {
   PASSENGERS: number;
   NETWORK: number;
   POPULATION: number;
-  ANNUAL_TICKETS: number;
+  TICKETS: number;
   PASSENGERS_PERCENT?: number;
   NETWORK_PERCENT?: number;
   POPULATION_PERCENT?: number;
-  ANNUAL_TICKETS_PERCENT?: number;
+  TICKETS_PERCENT?: number;
   AVERAGE_PERCENT?: number;
-  ANNUAL_TICKETS_INTERPOLATED?: boolean;
+  TICKETS_INTERPOLATED?: boolean;
 }
 
 const COLORS = {
   PASSENGERS: '#1f77b4',
   NETWORK: '#ff7f0e',
   POPULATION: '#2ca02c',
-  ANNUAL_TICKETS: '#d62728',
+  TICKETS: '#d62728',
   AVERAGE: '#6a3dc7',
 };
 
@@ -104,7 +115,7 @@ export class ComparisonChart implements AfterViewInit {
 
     const annualTickets = parser.parse(data.annual, (d: any) => ({
       YEAR: +d.YEAR,
-      ANNUAL_TICKETS: +d.ANNUAL_TICKETS,
+      TICKETS: +d.ANNUAL_TICKETS,
     }));
 
     const yearMap = new Map<number, CsvRow>();
@@ -116,7 +127,7 @@ export class ComparisonChart implements AfterViewInit {
           PASSENGERS: 0,
           NETWORK: 0,
           POPULATION: 0,
-          ANNUAL_TICKETS: 0,
+          TICKETS: 0,
         });
       }
       yearMap.get(d.YEAR)!.PASSENGERS = d.PASSENGERS;
@@ -129,7 +140,7 @@ export class ComparisonChart implements AfterViewInit {
           PASSENGERS: 0,
           NETWORK: 0,
           POPULATION: 0,
-          ANNUAL_TICKETS: 0,
+          TICKETS: 0,
         });
       }
       yearMap.get(d.YEAR)!.NETWORK = d.NETWORK;
@@ -142,7 +153,7 @@ export class ComparisonChart implements AfterViewInit {
           PASSENGERS: 0,
           NETWORK: 0,
           POPULATION: 0,
-          ANNUAL_TICKETS: 0,
+          TICKETS: 0,
         });
       }
       yearMap.get(d.YEAR)!.POPULATION = d.POPULATION;
@@ -155,14 +166,14 @@ export class ComparisonChart implements AfterViewInit {
           PASSENGERS: 0,
           NETWORK: 0,
           POPULATION: 0,
-          ANNUAL_TICKETS: 0,
+          TICKETS: 0,
         });
       }
-      yearMap.get(d.YEAR)!.ANNUAL_TICKETS = d.ANNUAL_TICKETS;
+      yearMap.get(d.YEAR)!.TICKETS = d.TICKETS;
     });
 
     this.rawData = Array.from(yearMap.values())
-      .filter((d) => d.PASSENGERS > 0 || d.NETWORK > 0 || d.POPULATION > 0 || d.ANNUAL_TICKETS > 0)
+      .filter((d) => d.PASSENGERS > 0 || d.NETWORK > 0 || d.POPULATION > 0 || d.TICKETS > 0)
       .sort((a, b) => a.YEAR - b.YEAR);
     this.rawData = this.rawData.filter((d) => d.YEAR <= 2023);
 
@@ -172,13 +183,13 @@ export class ComparisonChart implements AfterViewInit {
 
   private interpolateMissingTicketData(): void {
     const realDataPoints = this.rawData
-      .filter((d) => d.ANNUAL_TICKETS > 0)
+      .filter((d) => d.TICKETS > 0)
       .sort((a, b) => a.YEAR - b.YEAR);
 
-    const missingDataPoints = this.rawData.filter((d) => d.ANNUAL_TICKETS === 0);
+    const missingDataPoints = this.rawData.filter((d) => d.TICKETS === 0);
 
     missingDataPoints.forEach((d) => {
-      if (d.ANNUAL_TICKETS > 0) return;
+      if (d.TICKETS > 0) return;
 
       const prev = realDataPoints.filter((p) => p.YEAR < d.YEAR).pop();
       const next = realDataPoints.filter((p) => p.YEAR > d.YEAR)[0];
@@ -189,19 +200,19 @@ export class ComparisonChart implements AfterViewInit {
       if (prev && next) {
         const ratio = (d.YEAR - prev.YEAR) / (next.YEAR - prev.YEAR);
         interpolatedValue =
-          prev.ANNUAL_TICKETS + (next.ANNUAL_TICKETS - prev.ANNUAL_TICKETS) * ratio;
+          prev.TICKETS + (next.TICKETS - prev.TICKETS) * ratio;
         isInterpolated = true;
       } else if (prev) {
-        interpolatedValue = prev.ANNUAL_TICKETS;
+        interpolatedValue = prev.TICKETS;
         isInterpolated = true;
       } else if (next) {
-        interpolatedValue = next.ANNUAL_TICKETS;
+        interpolatedValue = next.TICKETS;
         isInterpolated = true;
       }
 
       if (isInterpolated) {
-        d.ANNUAL_TICKETS = Math.round(interpolatedValue);
-        d.ANNUAL_TICKETS_INTERPOLATED = true;
+        d.TICKETS = Math.round(interpolatedValue);
+        d.TICKETS_INTERPOLATED = true;
       }
     });
   }
@@ -213,19 +224,18 @@ export class ComparisonChart implements AfterViewInit {
     const baselinePassengers = baselineData.PASSENGERS;
     const baselineNetwork = baselineData.NETWORK;
     const baselinePopulation = baselineData.POPULATION;
-    const baselineAnnualTickets = baselineData.ANNUAL_TICKETS;
+    const baselineTickets = baselineData.TICKETS;
 
     this.rawData.forEach((d) => {
       d.PASSENGERS_PERCENT = baselinePassengers > 0 ? (d.PASSENGERS / baselinePassengers) * 100 : 0;
       d.NETWORK_PERCENT = baselineNetwork > 0 ? (d.NETWORK / baselineNetwork) * 100 : 0;
       d.POPULATION_PERCENT = baselinePopulation > 0 ? (d.POPULATION / baselinePopulation) * 100 : 0;
-      d.ANNUAL_TICKETS_PERCENT =
-        baselineAnnualTickets > 0 ? (d.ANNUAL_TICKETS / baselineAnnualTickets) * 100 : 0;
+      d.TICKETS_PERCENT = baselineTickets > 0 ? (d.TICKETS / baselineTickets) * 100 : 0;
       d.AVERAGE_PERCENT =
         ((d.PASSENGERS_PERCENT || 0) +
           (d.NETWORK_PERCENT || 0) +
           (d.POPULATION_PERCENT || 0) +
-          (d.ANNUAL_TICKETS_PERCENT || 0)) /
+          (d.TICKETS_PERCENT || 0)) /
         4;
     });
   }
@@ -236,30 +246,15 @@ export class ComparisonChart implements AfterViewInit {
     const element = this.chartContainer.nativeElement;
     element.innerHTML = '';
 
-    const svg = this.createSvgElement(element);
+    const svg = createSvgElement(element, this.dimensions);
     const chart = svg
       .append('g')
       .attr('transform', `translate(${this.dimensions.margin.left},${this.dimensions.margin.top})`);
 
     const { x, y } = this.createScales();
-    this.addAxes(chart, x, y);
-    this.addGrid(chart, y, this.dimensions.width);
+    addAxes(chart, x, y, this.dimensions.height);
+    addGrid(chart, y, this.dimensions.width);
     this.drawLegendAndLines(svg, chart, x, y);
-  }
-
-  private createSvgElement(
-    element: HTMLElement,
-  ): d3.Selection<SVGSVGElement, unknown, null, undefined> {
-    const { width, height, margin } = this.dimensions;
-    const totalWidth = width + margin.left + margin.right;
-    const totalHeight = height + margin.top + margin.bottom;
-
-    return d3
-      .select(element)
-      .append('svg')
-      .attr('viewBox', `0 0 ${totalWidth} ${totalHeight}`)
-      .style('width', '100%')
-      .style('height', 'auto');
   }
 
   private createScales() {
@@ -277,7 +272,7 @@ export class ComparisonChart implements AfterViewInit {
             d.PASSENGERS_PERCENT ?? 0,
             d.NETWORK_PERCENT ?? 0,
             d.POPULATION_PERCENT ?? 0,
-            d.ANNUAL_TICKETS_PERCENT ?? 0,
+            d.TICKETS_PERCENT ?? 0,
           );
         }) ?? 100;
     }
@@ -291,34 +286,6 @@ export class ComparisonChart implements AfterViewInit {
     return { x, y };
   }
 
-  private addAxes(
-    chart: any,
-    x: ScaleLinear<number, number>,
-    y: ScaleLinear<number, number>,
-  ): void {
-    const { height } = this.dimensions;
-
-    chart
-      .append('g')
-      .attr('transform', `translate(0,${height})`)
-      .call(d3.axisBottom(x).tickFormat(d3.format('d')));
-
-    chart.append('g').call(d3.axisLeft(y).ticks(6).tickFormat(d3.format('.2s')));
-  }
-
-  private addGrid(chart: any, y: d3.ScaleLinear<number, number>, width: number): void {
-    chart
-      .append('g')
-      .attr('class', 'grid')
-      .call(
-        d3
-          .axisLeft(y)
-          .ticks(6)
-          .tickSize(-width)
-          .tickFormat(() => ''),
-      );
-  }
-
   private drawLegendAndLines(
     svg: any,
     chart: any,
@@ -326,22 +293,18 @@ export class ComparisonChart implements AfterViewInit {
     y: d3.ScaleLinear<number, number>,
   ): void {
     const { width, margin } = this.dimensions;
-    const legend = this.createLegend(svg, width, margin);
+    const legend = createLegend(svg, width, margin);
 
-    this.drawAnnotations(chart, x);
+    drawAnnotations(chart, x, this.dimensions, [
+      { year: 2012, label: '365€ Ticket' },
+      { year: 2020, label: 'COVID-19' },
+    ]);
 
     if (this.viewMode === 'average') {
       this.drawAverageView(chart, x, y, legend);
     } else {
       this.drawSeparateView(chart, x, y, legend);
     }
-  }
-
-  private createLegend(svg: any, width: number, margin: any): any {
-    return svg
-      .append('g')
-      .attr('class', 'legend')
-      .attr('transform', `translate(${width + margin.left + 20}, ${margin.top + 20})`);
   }
 
   private drawAverageView(
@@ -357,9 +320,9 @@ export class ComparisonChart implements AfterViewInit {
 
     this.addBaselineLine(chart, y);
 
-    this.drawLine(chart, averageData, x, y, COLORS.AVERAGE, 'AVERAGE');
+    drawLine(chart, averageData, x, y, COLORS.AVERAGE, 'AVERAGE');
     this.drawDotsForAverage(chart, averageData, x, y, COLORS.AVERAGE);
-    this.addLegendItem(legend, COLORS.AVERAGE, 'AVERAGE %');
+    addLegendItem(legend, COLORS.AVERAGE, 'AVERAGE %');
   }
 
   private drawSeparateView(
@@ -368,12 +331,12 @@ export class ComparisonChart implements AfterViewInit {
     y: d3.ScaleLinear<number, number>,
     legend: any,
   ): void {
-    const keys: DataKey[] = ['PASSENGERS', 'NETWORK', 'POPULATION', 'ANNUAL_TICKETS'];
+    const keys: DataKey[] = ['PASSENGERS', 'NETWORK', 'POPULATION', 'TICKETS'];
     const labels = {
       PASSENGERS: 'PASSENGERS',
       NETWORK: 'NETWORK LENGTH',
       POPULATION: 'POPULATION',
-      ANNUAL_TICKETS: 'TICKET SALES',
+      TICKETS: 'TICKET SALES',
     };
 
     this.addBaselineLine(chart, y);
@@ -382,36 +345,13 @@ export class ComparisonChart implements AfterViewInit {
       const dataWithPercent = this.rawData.map((d) => ({
         YEAR: d.YEAR,
         [key]: d[(key + '_PERCENT') as keyof CsvRow] ?? 0,
-        interpolated: key === 'ANNUAL_TICKETS' ? !!d.ANNUAL_TICKETS_INTERPOLATED : false,
+        interpolated: key === 'TICKETS' ? !!d.TICKETS_INTERPOLATED : false,
       }));
 
-      this.drawLine(chart, dataWithPercent, x, y, COLORS[key], key);
+      drawLine(chart, dataWithPercent, x, y, COLORS[key], key);
       this.drawDotsForKey(chart, dataWithPercent, x, y, COLORS[key], key);
-      this.addLegendItem(legend, COLORS[key], labels[key], index);
+      addLegendItem(legend, COLORS[key], labels[key], index);
     });
-  }
-
-  private drawLine(
-    chart: any,
-    data: any[],
-    x: ScaleLinear<number, number>,
-    y: ScaleLinear<number, number>,
-    color: string,
-    key: string,
-  ): void {
-    const lineGenerator = d3
-      .line()
-      .x((d: any) => x(d.YEAR))
-      .y((d: any) => y(d[key]))
-      .curve(d3.curveMonotoneX);
-
-    chart
-      .append('path')
-      .datum(data)
-      .attr('fill', 'none')
-      .attr('stroke', color)
-      .attr('stroke-width', key === 'AVERAGE' ? 3 : 2.5)
-      .attr('d', lineGenerator);
   }
 
   private addBaselineLine(chart: any, y: d3.ScaleLinear<number, number>): void {
@@ -460,10 +400,10 @@ export class ComparisonChart implements AfterViewInit {
         this.showTooltip(event, d.YEAR, d.AVERAGE, 'AVERAGE', false);
       })
       .on('mousemove', (event: MouseEvent) => {
-        this.moveTooltip(event);
+        moveTooltip(event, this.tooltipEl, this.chartContainer);
       })
       .on('mouseout', () => {
-        this.hideTooltip();
+        hideTooltip(this.tooltipEl);
       });
   }
 
@@ -490,72 +430,11 @@ export class ComparisonChart implements AfterViewInit {
         this.showTooltip(event, d.YEAR, d[key], key, d.interpolated);
       })
       .on('mousemove', (event: MouseEvent) => {
-        this.moveTooltip(event);
+        moveTooltip(event, this.tooltipEl, this.chartContainer);
       })
       .on('mouseout', () => {
-        this.hideTooltip();
+        hideTooltip(this.tooltipEl);
       });
-  }
-
-  private addLegendItem(legend: any, color: string, label: string, index: number = 0): void {
-    const row = legend.append('g').attr('transform', `translate(0, ${index * 24})`);
-
-    row
-      .append('line')
-      .attr('x1', 0)
-      .attr('x2', 22)
-      .attr('y1', 0)
-      .attr('y2', 0)
-      .attr('stroke', color)
-      .attr('stroke-width', 3);
-
-    row
-      .append('text')
-      .attr('x', 30)
-      .attr('y', 4)
-      .attr('fill', '#444')
-      .attr('font-size', 12)
-      .text(label);
-  }
-
-  private drawAnnotations(chart: any, x: d3.ScaleLinear<number, number>): void {
-    const { width, height } = this.dimensions;
-    const markerGroup = chart.append('g').attr('class', 'markers');
-
-    const annotations = [
-      { year: 2012, label: '365€ Ticket' },
-      { year: 2020, label: 'COVID-19' },
-    ];
-
-    annotations.forEach(({ year, label }) => {
-      const xPos = x(year);
-      if (xPos < 0 || xPos > width) return;
-
-      this.addAnnotationLine(markerGroup, xPos, height);
-      this.addAnnotationLabel(markerGroup, xPos, label);
-    });
-  }
-
-  private addAnnotationLine(markerGroup: any, xPos: number, height: number): void {
-    markerGroup
-      .append('line')
-      .attr('x1', xPos)
-      .attr('x2', xPos)
-      .attr('y1', 0)
-      .attr('y2', height)
-      .attr('stroke', '#666')
-      .attr('stroke-width', 1.5)
-      .attr('stroke-dasharray', '4 4');
-  }
-
-  private addAnnotationLabel(markerGroup: any, xPos: number, label: string): void {
-    markerGroup
-      .append('text')
-      .attr('x', xPos + 6)
-      .attr('y', 14)
-      .attr('fill', '#666')
-      .attr('font-size', 12)
-      .text(label);
   }
 
   private showTooltip(
@@ -569,20 +448,9 @@ export class ComparisonChart implements AfterViewInit {
     elem.style.display = 'block';
     let html = `<strong>${label}</strong><br>${year}: ${value.toFixed(1)}%`;
     if (interpolated) {
-      html += `<br><span style="color:red;">(interpolated)</span>`;
+      html += `<br><span style="color:red;">interpolated</span>`;
     }
     elem.innerHTML = html;
-    this.moveTooltip(event);
-  }
-
-  private moveTooltip(event: MouseEvent): void {
-    const elem = this.tooltipEl.nativeElement;
-    const containerRect = this.chartContainer.nativeElement.getBoundingClientRect();
-    elem.style.left = event.clientX - containerRect.left + 15 + 'px';
-    elem.style.top = event.clientY - containerRect.top - 15 + 'px';
-  }
-
-  private hideTooltip(): void {
-    this.tooltipEl.nativeElement.style.display = 'none';
+    moveTooltip(event, this.tooltipEl, this.chartContainer);
   }
 }

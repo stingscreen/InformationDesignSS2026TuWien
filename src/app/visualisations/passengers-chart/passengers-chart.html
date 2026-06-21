@@ -18,6 +18,13 @@
         (click)="setViewMode('total')">
         Total
       </button>
+
+      <button
+        type="button"
+        [class.active]="viewMode === 'pie'"
+        (click)="setViewMode('pie')">
+        Pie
+      </button>
     </div>
   </div>
 </div>
