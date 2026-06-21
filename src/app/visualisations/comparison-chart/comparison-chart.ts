@@ -31,6 +31,7 @@ interface CsvRow {
   AVERAGE_PERCENT?: number;
   TICKETS_INTERPOLATED?: boolean;
 }
+
 const COLORS = {
   PASSENGERS: '#1f77b4',
   NETWORK: '#ff7f0e',
@@ -92,7 +93,7 @@ export class ComparisonChart implements AfterViewInit {
 
   private processData(data: any): void {
     const parser = d3.dsvFormat(';');
-    const tickets = parser.parse(data.tickets, (d: any) => ({
+    const passenger = parser.parse(data.tickets, (d: any) => ({
       YEAR: +d.YEAR,
       PASSENGERS: +d.BUS + +d.TRAM + +d.UNDERGROUND,
     }));
@@ -102,24 +103,19 @@ export class ComparisonChart implements AfterViewInit {
       NETWORK: +d.BUS + +d.TRAM + +d.UNDERGROUND,
     }));
 
-    const rawPop = parser.parse(data.pop);
-    const population = Array.from(
-      d3.rollup(
-        rawPop,
-        (v) => d3.sum(v, (d: any) => +d.POP_TOTAL),
-        (d: any) => +d.REF_YEAR,
-      ),
-      ([year, val]) => ({ YEAR: year, POPULATION: val }),
-    );
+    const population = parser.parse(data.pop.replace(/,/g, '.'), (d: any) => ({
+      YEAR: +d.REF_YEAR,
+      POPULATION: +d.POP_TOTAL,
+    }));
 
-    const annualTickets = parser.parse(data.annual, (d: any) => ({
+    const tickets = parser.parse(data.annual, (d: any) => ({
       YEAR: +d.YEAR,
       TICKETS: +d.ANNUAL_TICKETS,
     }));
 
     const yearMap = new Map<number, CsvRow>();
 
-    tickets.forEach((d) => {
+    passenger.forEach((d) => {
       if (!yearMap.has(d.YEAR)) {
         yearMap.set(d.YEAR, {
           YEAR: d.YEAR,
@@ -158,7 +154,7 @@ export class ComparisonChart implements AfterViewInit {
       yearMap.get(d.YEAR)!.POPULATION = d.POPULATION;
     });
 
-    annualTickets.forEach((d) => {
+    tickets.forEach((d) => {
       if (!yearMap.has(d.YEAR)) {
         yearMap.set(d.YEAR, {
           YEAR: d.YEAR,
@@ -172,9 +168,8 @@ export class ComparisonChart implements AfterViewInit {
     });
 
     this.rawData = Array.from(yearMap.values())
-      .filter((d) => d.PASSENGERS > 0 || d.NETWORK > 0 || d.POPULATION > 0 || d.TICKETS > 0)
-      .sort((a, b) => a.YEAR - b.YEAR);
-    this.rawData = this.rawData.filter((d) => d.YEAR <= 2023);
+      .sort((a, b) => a.YEAR - b.YEAR)
+      .filter((d) => d.YEAR <= 2023);
 
     this.interpolateMissingTicketData();
     this.calculatePercentages();
@@ -234,8 +229,7 @@ export class ComparisonChart implements AfterViewInit {
         ((d.PASSENGERS_PERCENT || 0) +
           (d.NETWORK_PERCENT || 0) +
           (d.POPULATION_PERCENT || 0) +
-          (d.TICKETS_PERCENT || 0)) /
-        4;
+          (d.TICKETS_PERCENT || 0)) / 4;
     });
   }
 

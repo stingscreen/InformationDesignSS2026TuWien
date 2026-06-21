@@ -141,14 +141,9 @@ export class PassengersChart implements AfterViewInit {
     const yearData = this.rawData.find((d: any) => d.YEAR === latestYear)!;
 
     const values = [
-      { key: 'BUS', value: yearData.BUS, color: COLORS.BUS, label: 'BUS' },
-      { key: 'TRAM', value: yearData.TRAM, color: COLORS.TRAM, label: 'TRAM' },
-      {
-        key: 'UNDERGROUND',
-        value: yearData.UNDERGROUND,
-        color: COLORS.UNDERGROUND,
-        label: 'UNDERGROUND',
-      },
+      { key: 'BUS', value: yearData.BUS, color: COLORS.BUS},
+      { key: 'TRAM', value: yearData.TRAM, color: COLORS.TRAM},
+      { key: 'UNDERGROUND', value: yearData.UNDERGROUND, color: COLORS.UNDERGROUND, },
     ];
 
     const total = values.reduce((sum, v) => sum + v.value, 0);
@@ -181,8 +176,7 @@ export class PassengersChart implements AfterViewInit {
         const target = event.currentTarget as HTMLElement;
         d3.select(target).attr('opacity', 0.7);
         const pct = ((d.data.value / total) * 100).toFixed(1);
-        const label = d.data.label;
-        this.showTooltipPie(event, label, d.data.value, pct);
+        this.showTooltipPie(event, d.data.key, d.data.value, pct);
       })
       .on('mousemove', (event: MouseEvent) => {
         moveTooltip(event, this.tooltipEl, this.chartContainer);
@@ -195,7 +189,7 @@ export class PassengersChart implements AfterViewInit {
 
     const legend = createLegend(svg, width, this.dimensions.margin, -70);
     values.forEach((v, i) => {
-      addLegendItem(legend, v.color, v.label, i);
+      addLegendItem(legend, v.color, v.key, i);
     });
 
     pieGroup
