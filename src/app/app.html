@@ -6,22 +6,22 @@
     <mat-icon>menu</mat-icon>
   </button>
 
-  <span class="app-title">Vienna Public Transport Accessibility</span>
+  <span class="app-title"><a href="/">Vienna Public Transport Accessibility</a></span>
   <span class="example-spacer"></span>
 
-  <button mat-icon-button routerLink="/story" aria-label="Open story">
+  <button matTooltip="Story Page" mat-icon-button routerLink="/story" aria-label="Open story">
     <mat-icon>auto_stories</mat-icon>
   </button>
 
-  <button mat-icon-button routerLink="/map" aria-label="Open map">
+  <button matTooltip="Interactive map" mat-icon-button routerLink="/map" aria-label="Open map">
     <mat-icon>map</mat-icon>
   </button>
 
-  <button mat-icon-button routerLink="/about" aria-label="Open about page">
+  <button matTooltip="About page" mat-icon-button routerLink="/about" aria-label="Open about page">
     <mat-icon>info</mat-icon>
   </button>
 
-  <button mat-icon-button (click)="shareWebsite()" aria-label="Share website">
+  <button matTooltip="Share" mat-icon-button (click)="shareWebsite()" aria-label="Share website">
     <mat-icon>share</mat-icon>
   </button>
 </mat-toolbar>

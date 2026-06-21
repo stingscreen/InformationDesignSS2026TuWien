@@ -4,6 +4,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
+import { MatTooltip } from '@angular/material/tooltip';
 
 @Component({
   selector: 'app-root',
@@ -16,6 +17,7 @@ import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
     MatMenuItem,
     MatMenuTrigger,
     RouterLink,
+    MatTooltip,
   ],
   templateUrl: './app.html',
   standalone: true,
