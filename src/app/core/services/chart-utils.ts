@@ -2,9 +2,6 @@ import * as d3 from 'd3';
 import { ElementRef } from '@angular/core';
 import { ScaleLinear } from 'd3';
 
-/**
- * Erstellt ein SVG-Element mit ViewBox und responsivem Styling
- */
 export function createSvgElement(
   element: HTMLElement,
   dimensions: {
@@ -25,9 +22,6 @@ export function createSvgElement(
     .style('height', 'auto');
 }
 
-/**
- * Fügt X- und Y-Achse zum Chart hinzu
- */
 export function addAxes(
   chart: any,
   x: ScaleLinear<number, number>,
@@ -42,9 +36,6 @@ export function addAxes(
   chart.append('g').call(d3.axisLeft(y).ticks(6).tickFormat(d3.format('.2s')));
 }
 
-/**
- * Fügt ein Grid (Hilfslinien) zum Chart hinzu
- */
 export function addGrid(chart: any, y: ScaleLinear<number, number>, width: number): void {
   chart
     .append('g')
@@ -70,9 +61,6 @@ export function createLegend(
     .attr('transform', `translate(${width + margin.left + xOffset}, ${margin.top + 20})`);
 }
 
-/**
- * Fügt ein einzelnes Legendenelement hinzu
- */
 export function addLegendItem(legend: any, color: string, label: string, index: number = 0): void {
   const row = legend.append('g').attr('transform', `translate(0, ${index * 24})`);
 
@@ -94,9 +82,6 @@ export function addLegendItem(legend: any, color: string, label: string, index: 
     .text(label);
 }
 
-/**
- * Zeichnet Annotationen (vertikale Linien mit Labels) im Chart
- */
 export function drawAnnotations(
   chart: any,
   x: ScaleLinear<number, number>,
@@ -115,9 +100,6 @@ export function drawAnnotations(
   });
 }
 
-/**
- * Fügt eine vertikale Linie für eine Annotation hinzu
- */
 export function addAnnotationLine(markerGroup: any, xPos: number, height: number): void {
   markerGroup
     .append('line')
@@ -130,9 +112,6 @@ export function addAnnotationLine(markerGroup: any, xPos: number, height: number
     .attr('stroke-dasharray', '4 4');
 }
 
-/**
- * Fügt ein Text-Label für eine Annotation hinzu
- */
 export function addAnnotationLabel(markerGroup: any, xPos: number, label: string): void {
   markerGroup
     .append('text')
@@ -143,9 +122,6 @@ export function addAnnotationLabel(markerGroup: any, xPos: number, label: string
     .text(label);
 }
 
-/**
- * Bewegt den Tooltip mit der Maus
- */
 export function moveTooltip(
   event: MouseEvent,
   tooltipEl: ElementRef<HTMLDivElement>,
@@ -157,9 +133,6 @@ export function moveTooltip(
   elem.style.top = event.clientY - containerRect.top - 15 + 'px';
 }
 
-/**
- * Blendet den Tooltip aus
- */
 export function hideTooltip(tooltipEl: ElementRef<HTMLDivElement>): void {
   tooltipEl.nativeElement.style.display = 'none';
 }
